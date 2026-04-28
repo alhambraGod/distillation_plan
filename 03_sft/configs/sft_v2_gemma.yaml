@@ -1,0 +1,33 @@
+# Gemma 2 9B 作为备选
+# 注意：Gemma 的 chat template 不原生支持 tool role，format.py 里会手动展开 <tool_call> 标签
+
+model: google/gemma-2-9b-it
+output_dir: ../../adapters/v2_sft_gemma9b_v1
+run_name: v2_sft_gemma9b_v1_qlora
+seed: 42
+report_to: wandb
+
+qlora: true
+attn_implementation: eager   # Gemma 2 在某些 flash-attn 版本有 bug，优先 eager/sdpa
+
+train_file: ../../data/datasets/v2/sft_train.jsonl
+eval_file: ../../data/datasets/v2/sft_val.jsonl
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: all-linear
+
+train:
+  epochs: 3
+  batch_size: 2           # 9B 比 7B 占显存更多
+  eval_batch_size: 2
+  grad_accum: 8           # 等效 batch 16
+  lr: 2.0e-4
+  warmup_ratio: 0.03
+  scheduler: cosine
+  max_seq_length: 4096
+  logging_steps: 10
+  eval_steps: 200
+  save_steps: 200

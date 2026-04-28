@@ -1,0 +1,40 @@
+# 起步 SFT 配置（Qwen 2.5 7B + QLoRA）
+# 对应 03_sft/sft_guide.md §4.1
+
+model: Qwen/Qwen2.5-7B-Instruct
+output_dir: ../../adapters/v2_sft_v1
+run_name: v2_sft_v1_qwen2.5_7b_qlora
+seed: 42
+report_to: wandb
+
+# 4bit 量化（单 A100 40GB 或 3090 24GB 能跑）
+qlora: true
+attn_implementation: flash_attention_2   # 没装 flash-attn 改 sdpa
+
+# 数据
+train_file: ../../data/datasets/v2/sft_train.jsonl
+eval_file: ../../data/datasets/v2/sft_val.jsonl
+# 可选：混入 20% 通用数据防遗忘
+# general_data_file: ../../data/datasets/general_ultrachat.jsonl
+# general_ratio: 0.2
+
+# LoRA
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: all-linear
+
+# 训练
+train:
+  epochs: 3
+  batch_size: 4
+  eval_batch_size: 4
+  grad_accum: 4           # 等效 batch 16
+  lr: 2.0e-4
+  warmup_ratio: 0.03
+  scheduler: cosine
+  max_seq_length: 4096
+  logging_steps: 10
+  eval_steps: 200
+  save_steps: 200

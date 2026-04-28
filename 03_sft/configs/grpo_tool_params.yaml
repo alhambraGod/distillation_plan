@@ -1,0 +1,27 @@
+# GRPO POC 配置：工具参数可验证 RL
+
+base_model: Qwen/Qwen2.5-7B-Instruct
+sft_adapter: ../../adapters/v2_sft_best
+output_dir: ../../adapters/v2_rl_grpo_v1_poc
+run_name: v2_rl_grpo_tool_params_v1
+seed: 42
+report_to: wandb
+
+# 数据：每行 {"prompt": "...", "expected": {"name": "search", "arguments": {...}}}
+train_file: ../../data/datasets/v2/rl_tool_params_train.jsonl
+
+# Reward 函数
+reward:
+  fn: tool_call_exact   # 见 train_rl_grpo.py 里的实现
+
+# GRPO 超参
+grpo:
+  num_generations: 8     # K 每 prompt 采样数
+  kl_coef: 0.04
+  max_new_tokens: 256
+
+# 训练
+train:
+  lr: 1.0e-6             # ⚠️ 比 SFT 小 200x
+  max_steps: 500         # POC 先跑 500 step
+  # batch_size / grad_accum 不在本简化实现中用；生产建议用 TRL GRPOTrainer

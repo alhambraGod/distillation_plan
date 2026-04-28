@@ -1,0 +1,40 @@
+# DPO 起步配置
+
+base_model: Qwen/Qwen2.5-7B-Instruct
+sft_adapter: ../../adapters/v2_sft_best   # SFT 阶段产出的最佳 adapter
+output_dir: ../../adapters/v2_dpo_v1
+run_name: v2_dpo_v1_beta0.1_lr5e-7
+seed: 42
+report_to: wandb
+
+qlora: true
+
+# 数据
+train_file: ../../data/datasets/v2/dpo_train.jsonl
+eval_file: ../../data/datasets/v2/dpo_val.jsonl
+
+# 新加 LoRA adapter 训练 DPO
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: all-linear
+
+# DPO 核心超参
+dpo:
+  beta: 0.1            # 0.1-0.5，越大越保守
+
+# 训练（注意 lr 比 SFT 小 2-3 个量级）
+train:
+  epochs: 1            # DPO 容易过拟合，1-2 epoch 足够
+  batch_size: 2
+  eval_batch_size: 2
+  grad_accum: 8        # 等效 batch 16
+  lr: 5.0e-7           # ⚠️ 比 SFT 的 2e-4 小 400 倍
+  warmup_ratio: 0.1
+  scheduler: cosine
+  max_length: 4096
+  max_prompt_length: 2048
+  logging_steps: 10
+  eval_steps: 50
+  save_steps: 100

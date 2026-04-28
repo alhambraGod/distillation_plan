@@ -1,0 +1,42 @@
+# 白盒 KL 蒸馏配置：Qwen 2.5 72B 教师 → Qwen 2.5 7B 学生
+# 前置：先跑 precompute_teacher_logits.py 生成带 teacher_logits 字段的训练集
+
+student_model: Qwen/Qwen2.5-7B-Instruct
+output_dir: ../../adapters/v2_kd_v1
+run_name: v2_kd_v1_qwen72b_to_7b_alpha0.5_beta0.5
+seed: 42
+report_to: wandb
+
+qlora: true
+response_template: "<|im_start|>assistant"
+
+# 数据：必须含 teacher_logits 字段
+train_file: ../../data/datasets/v2/sft_train_with_teacher.jsonl
+eval_file: ../../data/datasets/v2/sft_val_with_teacher.jsonl
+
+# LoRA
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: all-linear
+
+# 蒸馏超参
+kd:
+  alpha: 0.5         # CE loss 权重
+  beta: 0.5          # KL loss 权重
+  temperature: 2.0   # 经典 KD 温度
+
+# 训练
+train:
+  epochs: 3
+  batch_size: 2       # KD 比 SFT 占显存稍多（topk gather）
+  eval_batch_size: 2
+  grad_accum: 8
+  lr: 2.0e-4
+  warmup_ratio: 0.03
+  scheduler: cosine
+  max_seq_length: 4096
+  logging_steps: 10
+  eval_steps: 200
+  save_steps: 200

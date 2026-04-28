@@ -1,0 +1,38 @@
+# 黑盒 SFT 蒸馏配置：基于 Claude trace
+# 这就是当前主线，直接复用 sft_v2_base.yaml 的设置但显式标注"教师=Claude"
+
+student_model: Qwen/Qwen2.5-7B-Instruct
+output_dir: ../../adapters/v2_blackbox_claude_v1
+run_name: v2_blackbox_claude_v1
+seed: 42
+report_to: wandb
+
+# 教师标注（仅记录用，训练不依赖）
+teacher: claude-3-5-sonnet
+distillation_type: black-box-sft
+data_source: langsmith_v2_traces
+
+qlora: true
+attn_implementation: flash_attention_2
+
+train_file: ../../data/datasets/v2/sft_train.jsonl
+eval_file: ../../data/datasets/v2/sft_val.jsonl
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: all-linear
+
+train:
+  epochs: 3
+  batch_size: 4
+  eval_batch_size: 4
+  grad_accum: 4
+  lr: 2.0e-4
+  warmup_ratio: 0.03
+  scheduler: cosine
+  max_seq_length: 4096
+  logging_steps: 10
+  eval_steps: 200
+  save_steps: 200
