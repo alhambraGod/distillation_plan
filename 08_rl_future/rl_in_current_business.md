@@ -3,6 +3,9 @@
 > 原方案把 RL 放在最后一个阶段"暂缓"，客户质疑："RL 就真的不适合吗？"
 > 本文档正面回答：**RL 不是不适合，是需要前置条件**。
 > 并给出**可以现在就启动的 RL POC**。
+>
+> 与 `08_rl_future/readings.md`（RL 必读论文）、`03_sft/train_rl_grpo.py`（GRPO 实现）配套使用。
+> 决策与 `06_decisions/DP5_rl_evaluation.md` 对齐。
 
 ---
 

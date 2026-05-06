@@ -1,4 +1,4 @@
-"""LLM-as-Judge。用 Claude 3.5 Sonnet 或 GPT-4o 对输出打分。"""
+"""LLM-as-Judge。用合同允许的 Claude / GPT / 开源 judge 对输出打分。"""
 from __future__ import annotations
 
 import json
@@ -46,8 +46,9 @@ class JudgeScore:
 
 
 class LLMJudge:
-    def __init__(self, model: str = "claude-3-5-sonnet-20241022"):
-        self.model = model
+    def __init__(self, model: str | None = None):
+        # 不在代码里固定即将过期的 dated model。课堂/项目用环境变量锁定当前合同允许的 judge。
+        self.model = model or os.environ.get("ANTHROPIC_JUDGE_MODEL", "claude-sonnet-4-5")
         from anthropic import Anthropic
         self.client = Anthropic()
 

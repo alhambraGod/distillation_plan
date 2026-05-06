@@ -2,6 +2,8 @@
 
 > 这是整个项目的**单一真源**。改动走 PR，业务 lead 签字。  
 > 每一次 benchmark 报告都引用一个 spec 版本号。
+>
+> 与 `02_benchmark/harness_design.md`（评估架构）、`02_benchmark/v1_benchmark_design.md` / `v2_benchmark_design.md`（业务专属 spec）配套使用。
 
 **当前版本：v1.0（2026-04-24）**
 

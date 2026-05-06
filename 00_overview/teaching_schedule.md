@@ -111,7 +111,7 @@
 - 构造 1000-5000 对偏好数据
   - 方法 A：LangSmith 历史里挖
   - 方法 B：SFT 多次采样 + LLM 裁判排序
-  - 方法 C：Claude 输出 chosen vs SFT 输出 rejected（慎用）
+  - 方法 C：合规教师输出 chosen vs SFT 输出 rejected（慎用；Claude 仅限书面许可后）
 
 **产出**：`datasets/dpo_v2.jsonl`
 

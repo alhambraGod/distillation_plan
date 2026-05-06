@@ -208,7 +208,7 @@
 已在 `04_dpo/build_preferences.py` 实现三种来源：
 - 来源 A：LangSmith 历史挖掘
 - 来源 B：SFT 采样 + Claude-as-judge 排序
-- 来源 C：Claude vs SFT 对比
+- 来源 C：合规教师 vs SFT 对比（Claude 仅限书面许可后）
 
 **补强**：
 - Claude-as-judge 的 prompt **必须稳定版本化**

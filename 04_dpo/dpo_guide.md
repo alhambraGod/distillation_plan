@@ -1,6 +1,8 @@
 # DPO / ORPO 完整指南
 
 > 前置：`00_overview/concepts_and_techniques.md` §1.4 和 §1.5
+>
+> 与 `04_dpo/build_preferences.py`（偏好对构造）、`04_dpo/troubleshooting.md`（DPO 调优）、`04_dpo/configs/dpo_v2.yaml`（生产配置）配套使用。
 
 ## 1. 什么时候进 DPO（DP2 通过）
 
@@ -61,10 +63,10 @@ chosen, rejected = rank_and_pick(outputs)
 - 优点：想要多少有多少
 - 缺点：都来自同一模型，"偏好"可能是 self-bias
 
-#### 来源 C：Claude vs SFT
-把 Claude 输出当 chosen，SFT 输出当 rejected。
+#### 来源 C：合规教师 vs SFT
+把合规教师输出当 chosen，SFT 输出当 rejected。若教师是 Claude，必须先有 Anthropic 书面许可。
 - 优点：立即可得
-- 缺点：学到的是"Claude 风格"，可能丢失业务偏好
+- 缺点：学到的是"教师风格"，可能丢失业务偏好
 - **⚠️ 慎用**
 
 ### 4.2 推荐配比
@@ -73,7 +75,7 @@ chosen, rejected = rank_and_pick(outputs)
 |---|---|---|
 | A（历史挖掘） | 30% | 真实分布锚点 |
 | B（采样排序） | 50% | 主力 |
-| C（Claude vs SFT） | 20% | 补充，不超过 20% |
+| C（合规教师 vs SFT） | 20% | 补充，不超过 20% |
 
 ### 4.3 数据质量规则
 

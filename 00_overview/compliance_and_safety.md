@@ -14,8 +14,9 @@
 
 ### 合成数据
 - 若用 Claude 输出作为 SFT 训练数据（"Claude 蒸馏"）：
-  - Anthropic ToS 明确禁止用 Claude 输出训练**竞品**模型
-  - 内部业务使用通常可以，但建议 legal 复核
+  - Anthropic 官方口径要求：未经 Anthropic **书面许可**，不得用其服务输出训练或开发 AI 模型
+  - 不要把"内部业务使用"直接视为低风险；开放式文本生成 / agent 小模型通常仍需书面许可或合同补充条款
+  - 课程默认使用已授权 trace、人工批准答案、开源教师输出，或把 Claude 限定为线上 fallback / judge（仍需合同允许）
   - 做成"prompt 优化 / 去重"而不是"直接蒸馏"更稳
 
 ### 开源数据集
@@ -28,7 +29,7 @@
 ## 2. 模型基座合规
 
 ### Apache 2.0（最宽松）
-- Qwen 2.5 ≤ 7B
+- Qwen 2.5 7B / 14B / 32B Instruct（以具体模型卡为准）
 - Mistral / Ministral 大部分
 - 商用无限制
 
@@ -42,9 +43,10 @@
 - 月活 > 7 亿的公司需要单独申请
 - 禁止用于改进非 Llama 衍生的 LLM
 
-### Qwen 14B+ / DeepSeek / 其他
-- 看各自 license 文件
-- 大多商用 OK，但有报告义务
+### Qwen 72B / DeepSeek / 其他
+- Qwen 2.5 72B 使用 Qwen License，不要套用 14B / 32B 的 Apache 2.0 结论
+- DeepSeek R1 Distill Qwen 模型卡为 MIT，并明确支持商业使用、修改、衍生和蒸馏；若使用 hosted API，仍需审 API 服务条款
+- 其他模型必须看各自 license 文件和模型卡
 
 ### 行动项
 建立一份 `model_license_matrix.md`，每个候选模型记录：
@@ -82,7 +84,7 @@
 - 开源过滤工具：
   - [OpenAI Moderation API](https://platform.openai.com/docs/guides/moderation)
   - [Perspective API](https://perspectiveapi.com/)
-  - 本地化：LLM-as-filter（用 Claude 跑一遍打分）
+  - 本地化：LLM-as-filter（使用合同允许的 judge 模型跑一遍打分）
 
 ### 模型输出过滤
 生产环境加 safety layer：
@@ -203,5 +205,6 @@ agent 调用的工具返回的内容被用户控制 → 注入 agent。
 5. 训练后的模型本身是"衍生作品"吗？数据源的 license 是否传导？
 6. PII 脱敏程度法律上足够吗？
 7. Gemma License 的 prohibited use policy 应用到我们的场景？
+8. 如果使用 Claude 输出 / judge 结果，是否已有 Anthropic 书面许可？
 
 不要自己判断，让 legal 写白皮书备案。

@@ -1,5 +1,8 @@
 # 成本拆解（Claude vs 小模型）
 
+> 与 `07_budget/compute_estimate.md`（GPU 算力估算）配套使用。
+> 推理成本与回退影响详见 `05_serving/fallback_engineering.md`。
+
 ## 前提
 
 - Claude 3.5 Sonnet：`$3/1M input tokens` + `$15/1M output tokens`

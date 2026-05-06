@@ -1,5 +1,6 @@
-# 黑盒 SFT 蒸馏配置：基于 Claude trace
-# 这就是当前主线，直接复用 sft_v2_base.yaml 的设置但显式标注"教师=Claude"
+# 黑盒 SFT 蒸馏配置：基于已授权 trace
+# 注意：如果训练目标来自 Claude 输出，必须先取得 Anthropic 书面许可。
+# 直接复用 sft_v2_base.yaml 的设置；teacher 字段只记录数据血缘。
 
 student_model: Qwen/Qwen2.5-7B-Instruct
 output_dir: ../../adapters/v2_blackbox_claude_v1
@@ -7,10 +8,11 @@ run_name: v2_blackbox_claude_v1
 seed: 42
 report_to: wandb
 
-# 教师标注（仅记录用，训练不依赖）
-teacher: claude-3-5-sonnet
+# 教师标注（仅记录用，训练不依赖）。若为 Claude，需同步记录许可编号。
+teacher: approved_teacher
+teacher_permission_ref: required_if_claude
 distillation_type: black-box-sft
-data_source: langsmith_v2_traces
+data_source: authorized_langsmith_v2_traces
 
 qlora: true
 attn_implementation: flash_attention_2

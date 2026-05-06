@@ -1,7 +1,9 @@
 # 回退工程化（Fallback Engineering）
 
-> 对应 `project_critique_and_fixes.md` 问题 5。
+> 对应 `00_overview/project_critique_and_fixes.md` 问题 5。
 > **"保留 Claude fallback"不是一句话承诺，是一套工程体系。**
+>
+> 与 `05_serving/router.py`（路由实现）、`05_serving/rollout_plan.md`（灰度计划）、`05_serving/monitoring.md`（监控指标）配套使用。
 
 ---
 

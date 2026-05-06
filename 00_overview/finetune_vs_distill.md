@@ -27,7 +27,7 @@
 - 微调 = 改模型参数的**技术动作**（SFT / DPO / RL 等）
 - 蒸馏 = 让小模型向大模型**学习的思想**
 - 两者**正交**，经常叠加使用
-- 本项目 = **"用 Claude 教师知识 + SFT 技术"** = 蒸馏式微调
+- 本项目 = **"用合规教师知识 + SFT 技术"** = 蒸馏式微调。若教师知识来自 Claude 输出，必须先取得 Anthropic 书面许可或合同补充条款。
 
 ---
 
@@ -76,7 +76,7 @@
 │   │   ┌──────蒸馏的实现───────┐  │          │
 │   │   │                       │  │          │
 │   │   │  本项目                │  │          │
-│   │   │  （SFT + Claude 教师）│  │          │
+│   │   │  （SFT + 合规教师）   │  │          │
 │   │   └───────────────────────┘  │          │
 │   │                              │          │
 │   └──────────────────────────────┘          │
@@ -97,13 +97,15 @@
 
 拆开看：
   ├── "微调"侧：用 SFT 算法 + LoRA 改学生参数
-  └── "蒸馏"侧：训练数据来自 Claude（教师）的历史 trace
+  └── "蒸馏"侧：训练数据来自教师模型、人工批准答案或已授权历史 trace
 ```
 
 **为什么说是蒸馏而不只是微调**：
-- 我们的数据是 Claude 跑出来的，不是人工标的
-- 小模型的上限 = Claude 的能力
+- 如果使用教师模型输出，数据不是人工从零标注，而是来自教师生成 / 审核
+- 小模型的上限通常 = 教师和训练数据质量的上限
 - 性质上是"学生向教师学"
+
+**合规前提**：Claude 输出不能默认作为训练目标。只有 Anthropic 书面许可或合同明确允许时，才把 Claude trace 放进训练集；否则使用开源教师、人工批准答案或客户自有标准答案。
 
 **为什么说也是微调**：
 - 技术上就是 SFT（Supervised Fine-Tuning）
@@ -121,7 +123,7 @@
 - 这是纯微调
 - 需要自己准备"正确答案"
 
-**问题**：以上两种都很贵 / 慢 / 数据少。**所以我们选蒸馏**：让 Claude 替我们"生成/验证答案"。
+**问题**：以上两种都很贵 / 慢 / 数据少。**所以我们选蒸馏式微调**：让合规教师或业务专家替我们生成/验证答案。
 
 ### 3.3 如果只蒸馏不微调
 
@@ -155,7 +157,7 @@
 
 | 层 | 技术 | 备注 |
 |---|---|---|
-| 教师 | Claude API / Qwen 72B / DeepSeek V3 / Llama 70B | 参考 `teacher_model_comparison.md` |
+| 教师 | 已授权 Claude API / Qwen 72B / DeepSeek V3 / Llama 70B | 参考 `teacher_model_comparison.md` |
 | 蒸馏方式 | 黑盒 SFT / 白盒 KL / CoT 合成 / On-policy | 参考 `03_sft/distillation_techniques.md` |
 | 学生 | Qwen 7B / Gemma 9B / Llama 8B | 参考 `base_model_selection.md` |
 | 数据 pipeline | LangSmith / `langsmith` SDK / `distilabel` | 教师输出的收集/清洗 |
@@ -170,7 +172,7 @@
 | 成本主要在哪？ | 标注数据 | 教师推理 |
 | 最大风险？ | 数据量不够 | 学生上限 ≤ 教师 |
 | 适合谁？ | 有大量标注数据的团队 | 有强教师 API 或大模型权重的团队 |
-| 我们是？ | — | ✅ 我们属于这类（有 Claude trace） |
+| 我们是？ | — | ✅ 我们属于这类，但 Claude trace 只有获得书面许可后才能训练 |
 
 ---
 
@@ -200,11 +202,11 @@ Step 4: 评估 + 上线
 
 ```
 Step 1: 选教师
-  - Claude（现状）或 Qwen 2.5 72B 等开源大模型
+  - 已授权 Claude trace，或 Qwen 2.5 32B/72B、DeepSeek 等开源/可商用教师
   - 参考 teacher_model_comparison.md
 
 Step 2: 准备蒸馏数据
-  - 从 LangSmith 拉 Claude trace
+  - 从 LangSmith 拉已授权 trace，或用开源教师重新生成答案
   - 清洗 + 脱敏 + 分层（金/银/铜，见 data_quality_tiers.md）
 
 Step 3: 选蒸馏方式
@@ -245,7 +247,7 @@ Step 6: 评估 + 回退 + 上线
 | **幸存者偏差** | trace 只有"成功路径"，学生学到的天花板受限 | 数据分级（金/银/铜）+ 加难样本 |
 | **教师上限继承** | 教师错的地方学生也错 | 人工黄金集做 sanity check |
 | **Tokenizer 约束** | 白盒蒸馏要求同家族 | 选教师时同家族优先 |
-| **License 合规** | 教师输出能否训第三方模型 | Legal review（见 `anthropic_tos_compliance.md`） |
+| **License 合规** | 教师输出能否训第三方模型 | Legal review + 书面许可（见 `anthropic_tos_compliance.md`） |
 | **数据质量分级** | 不是所有 trace 都能进训练集 | 金/银/铜分层（见 `data_quality_tiers.md`） |
 | **分布对齐** | 训练分布 ≠ 线上分布 | On-policy DPO / 持续数据回流 |
 
@@ -255,7 +257,7 @@ Step 6: 评估 + 回退 + 上线
 |---|---|
 | V1 / V2 架构不同 | trace schema 差异，必须物理隔离 |
 | Agent 多轮 + 工具调用 | 现成评估框架不适用，必须自研 |
-| Claude ToS | 用 Claude 输出训小模型**法律灰色**，需 legal |
+| Claude ToS | 未经 Anthropic 书面许可，用 Claude 输出训生成式/agent 小模型不应进入训练主线 |
 | report_progress / submit_final_report 等业务原生协议 | 小模型必须学会这些"习惯" |
 | 灰度回退 | Claude fallback 不是简单"挂了切过去"，要定义触发条件 |
 
@@ -266,11 +268,11 @@ Step 6: 评估 + 回退 + 上线
 ### ❌ 误区 1："蒸馏就是微调的一种"
 **真相**：蒸馏是数据思路，微调是技术动作。**蒸馏可以不微调**（prompt 蒸馏），微调也可以不蒸馏（纯人工数据）。
 
-### ❌ 误区 2："小模型蒸馏出来能超越 Claude"
+### ❌ 误区 2："小模型蒸馏出来能超越教师"
 **真相**：**学生能力 ≤ 教师**。除非加 RL + 自我探索，否则不会超。
 
-### ❌ 误区 3："有数据就能蒸馏"
-**真相**：**脏数据会让小模型继承所有错误**。必须先数据分级 + 质量过滤。
+### ❌ 误区 3："有 trace 就能蒸馏"
+**真相**：**脏数据和未授权数据都会让项目失败**。必须先数据分级 + 质量过滤 + license/ToS 审核。
 
 ### ❌ 误区 4："蒸馏不需要懂微调"
 **真相**：蒸馏的执行 = 微调。你必须同时懂两套知识。
@@ -286,7 +288,7 @@ Step 6: 评估 + 回退 + 上线
 ## 8. 本项目一句话定位
 
 > 我们做的是：
-> **用 Claude（教师）产生的历史 trace（蒸馏数据）+ SFT 或 KL 蒸馏（微调技术）+ Qwen 7B（学生）= 生产可用的小模型**
+> **用合规教师 / 人工批准答案产生的训练数据 + SFT 或 KL 蒸馏（微调技术）+ Qwen 7B（学生）= 可灰度上线的小模型**
 >
 > 在这个定位下：
 > - **"蒸馏"** 回答了"数据从哪来"
@@ -314,7 +316,7 @@ Step 6: 评估 + 回退 + 上线
 | `base_model_selection.md` | 选哪个学生基座 |
 | `distillation_techniques.md` | 7 种蒸馏方法对比 |
 | `data_quality_tiers.md` | 金/银/铜数据分级 |
-| `anthropic_tos_compliance.md` | Claude 蒸馏 ToS 风险 |
+| `anthropic_tos_compliance.md` | Claude 输出训练的 ToS 风险 |
 | `fallback_engineering.md` | 回退工程化 |
 
 ---

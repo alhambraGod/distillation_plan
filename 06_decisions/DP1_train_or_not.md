@@ -1,6 +1,9 @@
 # DP1：是否进入训练阶段？
 
 > 阶段 1 结束时填。一页纸，结论明确。
+>
+> 与 `06_decisions/DP2_sft_enough.md` ~ `DP5_rl_evaluation.md`（5 份决策书）配套使用。
+> 决策依据见 `00_overview/concepts_and_techniques.md`（蒸馏方法选型）+ `02_benchmark/eval_spec.md`（评估口径）。
 
 ## 基本信息
 - **决策日期**：YYYY-MM-DD
@@ -56,7 +59,7 @@
 
 - 教师模型候选：__
 - 蒸馏类型：
-  - [ ] 黑盒 SFT（Claude trace 现状）
+  - [ ] 黑盒 SFT（已授权/人工批准 trace）
   - [ ] 白盒 KL（同家族大模型作教师）
   - [ ] CoT 合成（教师生成思维链）
   - [ ] 混合（多种叠加）

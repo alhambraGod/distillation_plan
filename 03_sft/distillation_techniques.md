@@ -32,11 +32,11 @@
 
 ## 2. 蒸馏技术分类（7 种主流方法）
 
-### 2.1 Black-box SFT Distillation（黑盒输出蒸馏）⭐ 现状
+### 2.1 Black-box SFT Distillation（黑盒输出蒸馏）⭐ 默认主线
 
 **原理**：教师产出 `(prompt, output)` 对，学生用 SFT 学。
 **适用**：只能调用教师 API，没有 logits/权重。
-**本项目位置**：**主线**（已有 Claude trace）。
+**本项目位置**：**主线**（已授权 trace / 人工批准答案 / 开源教师输出）。如果 trace 来自 Claude，必须先有 Anthropic 书面许可。
 **代码**：`03_sft/train.py`。
 
 **优点**：
@@ -56,7 +56,7 @@
 **原理**：教师对每个 token 的概率分布 `p_T(x_t | x_<t)` 暴露给学生，学生最小化：
 
 ```
-L_KD = α · CE(student_logits, label) + β · KL(student_logits || teacher_logits)
+L_KD = α · CE(student_logits, label) + β · KL(teacher_logits || student_logits)
                 ↑                            ↑
              硬标签 SFT                  软标签 KL
 ```
@@ -179,7 +179,7 @@ teacher_output = "<think>步骤1：识别目标客群...步骤2：评估渠道..
 
 | 你的场景 | 推荐技术 | 为什么 |
 |---|---|---|
-| 只有 Claude API trace | **Black-box SFT** | 没 logits，只能黑盒 |
+| 只有闭源 API trace | **Black-box SFT** | 没 logits，只能黑盒；若来自 Claude，必须先确认书面许可 |
 | Qwen 72B 自托管 + Qwen 7B 学生 | **White-box KL** + SFT | 同 tokenizer 收益最大 |
 | 复杂多步推理任务 | + **CoT 合成** | 教学生"如何想" |
 | SFT 后偏好不对 | **On-policy DPO** | 学生分布对齐 |
@@ -192,13 +192,13 @@ teacher_output = "<think>步骤1：识别目标客群...步骤2：评估渠道..
 
 ```
 阶段 1：数据 + Benchmark
-   ├── 评估 Claude（基线）
+   ├── 评估线上教师（基线）
    ├── 评估候选学生：Qwen 7B / Gemma 9B / R1-Distill-Qwen-7B
    ├── 评估候选教师：Qwen 72B（如果选作教师）
    └── 决策 DP1：是否训练 + 选哪种蒸馏
 
 阶段 2：SFT（黑盒蒸馏，主线）
-   ├── 用 Claude trace 做 SFT
+   ├── 用已授权/人工批准 trace 做 SFT
    └── 产出 v2_sft_v* adapter
    
 阶段 2.5（可选）：白盒 KL 增强
@@ -212,7 +212,7 @@ teacher_output = "<think>步骤1：识别目标客群...步骤2：评估渠道..
    └── 产出 v2_cot_v* adapter
 
 阶段 3：DPO（偏好对齐）
-   ├── 历史挖掘 / 采样排序 / Claude vs SFT
+   ├── 历史挖掘 / 采样排序 / 合规教师 vs SFT
    └── 可结合 on-policy（学生采样 + 教师 judge）
 
 阶段 4：灰度上线
@@ -313,7 +313,7 @@ loss = kl_div(student_logits_subset, top_logits)
 
 启动训练前回答：
 
-- [ ] 数据来源是？（Claude trace / 自己用大模型生成 / 混合）
+- [ ] 数据来源是？（已授权 trace / 人工批准答案 / 开源教师生成 / 混合）
 - [ ] 教师模型是？（参考 `teacher_model_comparison.md`）
 - [ ] 教师和学生 tokenizer 是否同源？
 - [ ] 主推方法是？（黑盒 SFT / 白盒 KL / 混合）

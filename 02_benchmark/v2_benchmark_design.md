@@ -75,8 +75,8 @@ V2 可能跑十几轮才结束，上下文积累快。
 |---|---|
 | 简单查询 + 简单回答 | 小模型 SFT 足够 |
 | 中等复杂度 + 工具调用 1-3 次 | 小模型 SFT + DPO |
-| 高复杂度 + 多工具多轮 | 保留 Claude，或小模型+Claude fallback |
-| 关键决策（发布、扣费等） | 必须 Claude |
+| 高复杂度 + 多工具多轮 | 保留线上教师，或小模型 + fallback |
+| 关键决策（发布、扣费等） | 必须走线上教师 / 人工确认 |
 
 ## Router 策略示例（V2）
 
@@ -87,9 +87,9 @@ def route_v2(task_meta):
     if task_meta.requires_skills in TRAINED_SKILLS:
         return "local-qwen2.5-7b-sft"
     if task_meta.is_critical:
-        return "claude-3-5-sonnet"
-    # 保守策略：用小模型，fallback 到 Claude
-    return RouterWithFallback("local-qwen2.5-7b-sft", fallback="claude-3-5-sonnet")
+        return "approved-teacher"
+    # 保守策略：用小模型，fallback 到线上教师
+    return RouterWithFallback("local-qwen2.5-7b-sft", fallback="approved-teacher")
 ```
 
 ## 推荐 benchmark 集规模（V2）

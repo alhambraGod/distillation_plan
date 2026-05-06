@@ -1,0 +1,50 @@
+# L05 配套：5 分钟跑通的 SFT demo 配置
+#
+# 用法：
+#   python 03_sft/train.py --config 03_sft/configs/demo_small.yaml
+#
+# 设计：100 条数据 + 1 epoch + LoRA r=8 → 单 GPU 5 分钟跑完
+# 用途：让学员第一次跑通 SFT pipeline，验证环境、看 loss 曲线
+
+# -------- 模型 --------
+base_model: Qwen/Qwen2.5-1.5B-Instruct  # 小模型，跑得快
+qlora: true                              # 4bit 量化省显存
+
+# -------- LoRA --------
+lora:
+  r: 8                                    # demo 用最小 r
+  alpha: 16
+  dropout: 0.05
+  target_modules: all-linear
+
+# -------- 训练 --------
+train:
+  epochs: 1
+  batch_size: 2
+  grad_accum: 2                           # 等效 batch = 4
+  lr: 2.0e-4
+  warmup_ratio: 0.05
+  scheduler: cosine
+  max_seq_length: 2048                    # 短序列，省显存
+  optim: paged_adamw_8bit
+  bf16: true
+  gradient_checkpointing: true
+  logging_steps: 5
+  save_strategy: epoch
+
+# -------- 数据 --------
+data:
+  train_file: data/datasets/demo/sft_demo_100.jsonl  # 100 条 demo 数据
+  general_mix: 0.0                                    # demo 不混通用
+
+# -------- Chat Template --------
+chat_template:
+  response_template: "<|im_start|>assistant\n"        # Qwen 系列
+  add_generation_prompt: false
+
+# -------- 输出 --------
+output_dir: adapters/demo_small
+
+# -------- 监控 --------
+report_to: ""                             # demo 不报 W&B；生产改成 "wandb"
+run_name: sft_demo_small_v1

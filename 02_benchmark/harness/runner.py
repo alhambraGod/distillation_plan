@@ -79,7 +79,7 @@ def aggregate(results: list[dict], metrics: list[Metric]) -> dict[str, float]:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cases", required=True)
-    ap.add_argument("--model", required=True, help="e.g. claude-3-5-sonnet, local-qwen2.5-7b")
+    ap.add_argument("--model", required=True, help="e.g. claude-sonnet-4-5, local-qwen2.5-7b")
     ap.add_argument("--out-dir", required=True)
     ap.add_argument("--spec-version", default="v1.0")
     ap.add_argument("--concurrency", type=int, default=5)

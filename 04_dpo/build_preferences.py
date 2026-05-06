@@ -4,7 +4,7 @@
 三种来源：
 A. LangSmith 历史挖掘（同 prompt 不同 trace）
 B. SFT 多次采样 + judge 排序
-C. Claude vs SFT（慎用，不超过 20%）
+C. Approved-teacher vs SFT（慎用，不超过 20%，Claude 仅限书面许可后）
 
 输出：datasets/dpo_v2.jsonl
 """
@@ -20,6 +20,8 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger(__name__)
 
+SUCCESS_STATUSES = {"success", "completed"}
+
 
 @dataclass
 class PrefPair:
@@ -27,7 +29,7 @@ class PrefPair:
     prompt: str               # apply_chat_template 后的字符串
     chosen: str               # assistant 完整回复
     rejected: str
-    source: str               # "history" | "sampled" | "claude_vs_sft"
+    source: str               # "history" | "sampled" | "teacher_vs_sft"
     metadata: dict
 
 
@@ -56,8 +58,13 @@ def mine_from_history(history_jsonl: Path, n_pairs: int) -> list[PrefPair]:
     for h, items in groups.items():
         if len(items) < 2:
             continue
-        # 简化：token 多的 + final_status == success 当 chosen
-        items.sort(key=lambda s: (s["final_status"] != "success", -s["metadata"].get("completion_tokens", 0)))
+        # 简化：成功态 + token 多的当 chosen。不同 trace 系统可能写 success 或 completed。
+        items.sort(
+            key=lambda s: (
+                str(s.get("final_status", "")).lower() not in SUCCESS_STATUSES,
+                -s["metadata"].get("completion_tokens", 0),
+            )
+        )
         chosen = items[0]
         rejected = items[-1]
         if chosen == rejected:
@@ -125,31 +132,40 @@ def sample_and_rank(
 
 
 # ------------------------------------------------------------
-# 来源 C：Claude vs SFT
+# 来源 C：合规教师 vs SFT
 # ------------------------------------------------------------
-def claude_vs_sft(
+def teacher_vs_sft(
     prompts: list[str],
-    claude_client,
+    teacher_client,
     sft_client,
     n_pairs: int = 500,
 ) -> list[PrefPair]:
+    """
+    合规教师输出作为 chosen，SFT 输出作为 rejected。
+
+    若 teacher_client 是 Claude，必须先确认 Anthropic 书面许可允许把输出
+    作为训练目标；否则请使用开源教师、人工批准答案或内部标准答案。
+    """
     pairs = []
     for i, prompt in enumerate(prompts):
-        c_out = claude_client.generate(prompt)
+        c_out = teacher_client.generate(prompt)
         s_out = sft_client.generate(prompt, temperature=0.7)
         if c_out == s_out:
             continue
         pairs.append(PrefPair(
-            pair_id=f"cvs_{i:06d}",
+            pair_id=f"tvs_{i:06d}",
             prompt=prompt,
             chosen=c_out,
             rejected=s_out,
-            source="claude_vs_sft",
+            source="teacher_vs_sft",
             metadata={},
         ))
         if len(pairs) >= n_pairs:
             break
     return pairs
+
+
+claude_vs_sft = teacher_vs_sft  # Backward-compatible alias; prefer teacher_vs_sft.
 
 
 # ------------------------------------------------------------

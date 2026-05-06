@@ -35,7 +35,7 @@ class ModelClient(Protocol):
 # ------------------------------------------------------------
 @dataclass
 class ClaudeClient:
-    name: str = "claude-3-5-sonnet"
+    name: str = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-5")
     max_tokens: int = 4096
 
     def __post_init__(self):

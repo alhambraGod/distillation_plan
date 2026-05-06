@@ -1,7 +1,7 @@
 """
 白盒 KL 蒸馏训练脚本。
 
-Loss = α · CE(student, label) + β · KL(student || teacher_topk)
+Loss = α · CE(student, label) + β · KL(teacher_topk || student)
 
 教师 logits 必须先用 precompute_teacher_logits.py 预计算好，
 存在每条样本的 teacher_logits 字段。
@@ -137,19 +137,26 @@ class KDTrainer(Trainer):
 
         outputs = model(**{k: v for k, v in inputs.items() if k != "labels"}, labels=labels)
         ce_loss = outputs.loss
-        student_logits = outputs.logits  # [B, L, V]
+        student_logits = outputs.logits  # [B, L, V], logits[t] predicts token[t+1]
 
-        # 取出对应教师 topk 位置的学生 logits
-        # student_topk[b, l, k] = student_logits[b, l, teacher_idx[b, l, k]]
-        student_topk = torch.gather(student_logits, dim=-1, index=teacher_idx)
+        # Causal LM 的 loss 是 next-token loss：
+        # logits[:, t] 对齐 labels[:, t+1]，teacher logits 也必须做同样 shift。
+        student_shift = student_logits[:, :-1, :]
+        teacher_idx_shift = teacher_idx[:, :-1, :]
+        teacher_val_shift = teacher_val[:, :-1, :]
+        label_shift = labels[:, 1:]
+
+        # 取出教师 top-k token 对应位置的学生 logits。
+        # student_topk[b, t, k] = student_logits[b, t, teacher_idx[b, t, k]]
+        student_topk = torch.gather(student_shift, dim=-1, index=teacher_idx_shift)
 
         # 计算 KL，注意 mask 掉 -100 位置
         T = self.kd_T
         student_log_p = F.log_softmax(student_topk / T, dim=-1)
-        teacher_p = F.softmax(teacher_val / T, dim=-1)
+        teacher_p = F.softmax(teacher_val_shift / T, dim=-1)
         kl = F.kl_div(student_log_p, teacher_p, reduction="none").sum(-1)  # [B, L]
 
-        loss_mask = (labels != -100).float()
+        loss_mask = (label_shift != -100).float()
         kl_loss = (kl * loss_mask).sum() / loss_mask.sum().clamp(min=1.0)
         kl_loss = kl_loss * (T * T)  # standard KD scaling
 
